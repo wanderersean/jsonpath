@@ -1,6 +1,9 @@
 package jsonpath
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 type path interface {
 	evaluate(c context.Context, parameter interface{}) (interface{}, error)
@@ -63,10 +66,22 @@ type ambiguousPath struct {
 	ending plainPath
 }
 
+type KeyAndValue struct {
+	Key   []string
+	Value interface{}
+}
+
 func (p *ambiguousPath) evaluate(ctx context.Context, parameter interface{}) (interface{}, error) {
 	matchs := []interface{}{}
 	p.visitMatchs(ctx, parameter, func(keys []interface{}, match interface{}) {
-		matchs = append(matchs, match)
+		if len(keys) != 1 {
+			panic(fmt.Sprintf("keys length not equal to 1: %v", keys))
+		}
+		keysString := []string{}
+		for _, k := range keys[0].([]interface{}) {
+			keysString = append(keysString, k.(string))
+		}
+		matchs = append(matchs, KeyAndValue{Key: keysString, Value: match})
 	})
 	return matchs, nil
 }
